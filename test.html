@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải bài Tarot Sự nghiệp</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải font chữ (Inter và Playfair Display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Tùy chỉnh font chữ */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Tạo nền gradient lấp lánh */
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Hiệu ứng mờ dần khi lá bài xuất hiện */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Thêm một chút hiệu ứng cho lá bài */
+        .tarot-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .tarot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(167, 139, 250, 0.2), 0 10px 10px -5px rgba(167, 139, 250, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200 p-6 md:p-12">
+    <div class="container mx-auto max-w-5xl">
+        
+        <!-- Tiêu đề -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400 mb-2">Trải Bài Tarot Sự Nghiệp</h1>
+            <p class="text-lg text-indigo-200">Hãy tập trung vào câu hỏi về sự nghiệp của bạn và rút 3 lá bài.</p>
+        </header>
+
+        <!-- Nút rút bài -->
+        <div class="text-center mb-12">
+            <button id="drawButton" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                Rút 3 Lá Bài
+            </button>
+        </div>
+
+        <!-- Khu vực hiển thị 3 lá bài -->
+        <div id="spreadContainer" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <!-- Các lá bài sẽ được JS chèn vào đây -->
+        </div>
+
+        <!-- Khu vực giải nghĩa chi tiết -->
+        <div id="interpretationContainer" class="bg-gray-800 bg-opacity-50 rounded-lg p-6 md:p-10 shadow-xl" style="display: none;">
+            <h2 class="text-3xl font-bold text-center mb-6 text-purple-300">Ý Nghĩa Chi Tiết</h2>
+            <div id="interpretationContent" class="space-y-8">
+                <!-- Nội dung giải nghĩa sẽ được JS chèn vào đây -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Dữ liệu 22 lá bài Ẩn Chính (Major Arcana) ---
+        // Mỗi lá bài có giải nghĩa chi tiết về SỰ NGHIỆP
+        const tarotData = [
+            {
+                name: "0. The Fool (Chàng Khờ)",
+                career_meaning: "Một sự khởi đầu mới mẻ trong sự nghiệp của bạn, có thể là một công việc mới, một dự án mới, hoặc một hướng đi hoàn toàn khác. Lá bài này khuyến khích bạn chấp nhận rủi ro một cách vô tư, tin tưởng vào trực giác và sẵn sàng học hỏi. Đây là lúc để mạo hiểm và khám phá những điều chưa biết."
+            },
+            {
+                name: "I. The Magician (Pháp Sư)",
+                career_meaning: "Bạn đang có tất cả các nguồn lực, kỹ năng và cơ hội cần thiết để thành công. Đây là lúc để hành động, chủ động và biến ý tưởng thành hiện thực. Đừng nghi ngờ khả năng của mình. Nếu bạn có một dự án muốn theo đuổi, bây-giờ là lúc để bắt đầu. Quyền lực đang ở trong tay bạn."
+            },
+            {
+                name: "II. The High Priestess (Nữ Tu Sĩ)",
+                career_meaning: "Hãy tin tưởng vào trực giác của bạn. Có thể có những thông tin quan trọng về công việc chưa được tiết lộ rõ ràng. Thay vì vội vã hành động, đây là lúc để lắng nghe, quan sát và suy ngẫm. Một quyết định quan trọng có thể cần thêm thời gian để 'chín muồi'. Tri thức nội tâm sẽ dẫn dắt bạn."
+            },
+            {
+                name: "III. The Empress (Nữ Hoàng)",
+                career_meaning: "Đây là thời kỳ của sự sáng tạo, phát triển và 'thai nghén' dự án. Công việc của bạn đang đơm hoa kết trái. Đây cũng là lá bài của sự nuôi dưỡng, cho thấy bạn nên chăm sóc các mối quan hệ đồng nghiệp hoặc phát triển ý tưởng của mình. Sự nghiệp của bạn đang ở giai đoạn phát triển rất tích cực."
+            },
+            {
+                name: "IV. The Emperor (Hoàng Đế)",
+                career_meaning: "Cần phải có trật tự, kỷ luật và cấu trúc rõ ràng trong công việc. Đây là lúc để lập kế hoạch chi tiết, tổ chức lại mọi thứ và thể hiện khả năng lãnh đạo. Bạn có thể đang ở vị trí có quyền lực hoặc cần phải làm việc với một người sếp có uy quyền. Hãy kiểm soát tình hình một cách lý trí."
+            },
+            {
+                name: "V. The Hierophant (Giáo Hoàng)",
+                career_meaning: "Lá bài này nói về truyền thống, các tổ chức lớn, và việc học hỏi từ người đi trước. Bạn có thể tìm kiếm sự hướng dẫn từ một người cố vấn (mentor) hoặc tham gia một khóa học để nâng cao chuyên môn. Đôi khi, đây là lúc để đi theo 'con đường chính thống' thay vì phá cách."
+            },
+            {
+                name: "VI. The Lovers (Người Tình)",
+                career_meaning: "Bạn đang đứng trước một lựa chọn quan trọng trong sự nghiệp, có thể là giữa hai công việc, hai dự án, hoặc giữa công việc và giá trị cá nhân. Lá bài này cũng nói về sự hợp tác. Hãy đảm bảo rằng các quyết định và các mối quan-"
+            },
+            {
+                name: "VII. The Chariot (Cỗ Xe)",
+                career_meaning: "Đây là lá bài của chiến thắng, ý chí và sự kiểm soát. Bạn đang có động lực rất lớn để vượt qua mọi trở ngại. Hãy tập trung vào mục tiêu của mình và dùng ý chí để tiến về phía trước. Bạn có thể phải cân bằng các lực lượng đối lập (ví dụ: công việc và gia đình) nhưng bạn sẽ thành công."
+            },
+            {
+                name: "VIII. Strength (Sức Mạnh)",
+                career_meaning: "Lá bài này không nói về sức mạnh thể chất, mà là sức mạnh nội tâm, lòng can đảm và sự kiên nhẫn. Bạn có khả năng 'thuần hóa' những tình huống khó khăn nhất bằng sự mềm mỏng, từ bi và bền bỉ. Đừng dùng vũ lực, hãy dùng sự thấu hiểu để giải quyết xung đột trong công việc."
+            },
+            {
+                name: "IX. The Hermit (Ẩn Sĩ)",
+                career_meaning: "Đây là lúc để 'lùi lại', tự xem xét và suy ngẫm về con đường sự nghiệp của mình. Bạn có thể cần một chút thời gian một mình để phân tích xem mình thực sự muốn gì. Đây cũng là lúc để tìm kiếm tri thức hoặc trở thành một 'ngọn hải đăng' tri thức cho người khác."
+            },
+            {
+                name: "X. Wheel of Fortune (Bánh Xe Vận Mệnh)",
+                career_meaning: "Một sự thay đổi lớn và bất ngờ sắp xảy ra trong sự nghiệp, có thể là tích cực hoặc tiêu cực, nhưng nó nằm ngoài tầm kiểm soát của bạn. Đây là một chu kỳ mới. Hãy học cách linh hoạt và thích nghi với sự thay đổi. Vận may đang xoay vần."
+            },
+            {
+                name: "XI. Justice (Công Lý)",
+                career_meaning: "Mọi thứ sẽ được giải quyết một cách công bằng và rõ ràng. Lá bài này thường liên quan đến các vấn đề pháp lý, hợp đồng trong công việc. Hãy luôn trung thực và minh bạch trong mọi hành động. Nếu bạn đã làm đúng, bạn sẽ nhận được kết quả xứng đáng."
+            },
+            {
+                name: "XII. The Hanged Man (Người Treo Ngược)",
+                career_meaning: "Bạn có thể đang cảm thấy bế tắc hoặc phải 'hy sinh' điều gì đó trong công việc. Đây là lúc để tạm dừng lại và nhìn mọi thứ từ một góc độ hoàn toàn khác. Sự bế tắc này là cần thiết để bạn có một cái nhìn mới, một sự đột phá về tư duy. Đừng cố gắng vùng vẫy."
+            },
+            {
+                name: "XIII. Death (Cái Chết)",
+                career_meaning: "Một sự kết thúc và chuyển đổi lớn. Điều này có thể đáng sợ, nhưng nó là cần thiết để mở đường cho một cái gì đó mới mẻ và tốt đẹp hơn. Có thể là kết thúc một công việc, một dự án, hoặc một vai trò cũ. Đừng níu kéo quá khứ, hãy sẵn sàng cho sự tái sinh."
+            },
+            {
+                name: "XIV. Temperance (Sự Điều Độ)",
+                career_meaning: "Lá bài này nói về sự cân bằng, hòa hợp và mục đích. Bạn cần tìm kiếm sự cân bằng trong công việc (ví dụ: giữa công việc và cuộc sống, giữa lý trí và cảm xúc) hoặc kết hợp các yếu tố khác nhau để tạo ra một giải pháp hoàn hảo. Hãy kiên nhẫn, mọi thứ đang đi đúng hướng."
+            },
+            {
+                name: "XV. The Devil (Ác Quỷ)",
+                career_meaning: "Bạn đang cảm thấy bị 'bó buộc' hoặc 'mắc kẹt' trong một tình huống công việc nào đó (ví dụ: một công việc bạn ghét nhưng không thể bỏ, một thói quen xấu, hoặc một mối quan hệ độc hại). Lá bài này chỉ ra rằng sự bó buộc này phần lớn là do bạn tự tạo ra. Hãy nhận diện 'xiềng xích' và tìm cách tự giải thoát."
+            },
+            {
+                name: "XVI. The Tower (Ngọn Tháp)",
+                career_meaning: "Một sự sụp đổ hoặc thay đổi đột ngột, bất ngờ trong công việc (ví dụ: mất việc, dự án thất bại). Điều này có thể gây sốc, nhưng nó phá vỡ những cấu trúc cũ kỹ, sai lầm để bạn có thể xây dựng lại mọi thứ trên một nền tảng vững chắc và trung thực hơn."
+            },
+            {
+                name: "XVII. The Star (Ngôi Sao)",
+                career_meaning: "Đây là lá bài của hy vọng, cảm hứng và sự chữa lành sau một giai đoạn khó khăn. Hãy giữ vững niềm tin vào tương lai sự nghiệp của bạn. Bạn đang được định hướng và bảo vệ. Đây là thời điểm tuyệt vời để mơ ước lớn và đặt mục tiêu dài hạn."
+            },
+            {
+                name: "XVIII. The Moon (Mặt Trăng)",
+                career_meaning: "Mọi thứ đang khá mơ hồ và không chắc chắn. Có thể có những ảo ảnh, hiểu lầm hoặc nỗi sợ hãi vô hình đang ảnh hưởng đến công việc của bạn. Đừng đưa ra quyết định quan trọng vào lúc này. Hãy tin vào trực giác của bạn để tìm ra sự thật đằng sau bức màn sương."
+            },
+            {
+                name: "XIX. The Sun (Mặt Trời)",
+                career_meaning: "Thành công, rõ ràng và niềm vui! Đây là một trong những lá bài tích cực nhất. Công việc của bạn đang diễn ra vô cùng tốt đẹp. Bạn đạt được thành tựu, được công nhận, và cảm thấy tràn đầy năng lượng tích cực. Mọi thứ đều rõ ràng và tươi sáng."
+            },
+            {
+                name: "XX. Judgement (Phán Xét)",
+                career_meaning: "Đây là lúc của sự 'thức tỉnh' và đánh giá lại. Bạn đang nhìn lại con đường sự nghiệp của mình và hiểu rõ hơn về 'tiếng gọi' (calling) thực sự của bản thân. Bạn có thể được tha thứ cho những sai lầm trong quá khứ và sẵn sàng cho một chương mới, một phiên bản tốt hơn của chính mình trong sự nghiệp."
+            },
+            {
+                name: "XXI. The World (Thế Giới)",
+                career_meaning: "Một chu kỳ quan trọng trong sự nghiệp của bạn đã hoàn thành một cách trọn vẹn và thành công. Đây là lúc để ăn mừng thành tựu và chuẩn bị cho một hành trình mới. Bạn đã đạt được điều mình muốn và thế giới đang mở rộng trước mắt bạn. Cảm giác viên mãn và thành đạt."
+            }
+        ];
+
+        // --- Lấy các phần tử DOM ---
+        const drawButton = document.getElementById('drawButton');
+        const spreadContainer = document.getElementById('spreadContainer');
+        const interpretationContainer = document.getElementById('interpretationContainer');
+        const interpretationContent = document.getElementById('interpretationContent');
+
+        // --- Thêm sự kiện cho nút ---
+        drawButton.addEventListener('click', drawCards);
+
+        /**
+         * Hàm chính: Rút và hiển thị 3 lá bài
+         */
+        function drawCards() {
+            // 1. Tạm khóa nút và thay đổi văn bản
+            drawButton.disabled = true;
+            drawButton.textContent = "Đang xào bài...";
+            drawButton.classList.add("opacity-50");
+
+            // 2. Xóa kết quả cũ
+            spreadContainer.innerHTML = '';
+            interpretationContent.innerHTML = '';
+            interpretationContainer.style.display = 'none';
+
+            // 3. Xào bài (Tạo một bản sao và xào bằng thuật toán Fisher-Yates)
+            let deck = [...tarotData];
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // 4. Rút 3 lá bài
+            const drawnCards = [deck.pop(), deck.pop(), deck.pop()];
+            const positions = [
+                "1. Tình hình hiện tại",
+                "2. Thách thức / Cơ hội",
+                "3. Lời khuyên / Kết quả"
+            ];
+
+            // 5. Hiển thị kết quả sau một khoảng trễ (để tạo cảm giác)
+            setTimeout(() => {
+                // Hiển thị 3 lá bài
+                drawnCards.forEach((card, index) => {
+                    displayCard(card, positions[index], index);
+                });
+
+                // Hiển thị giải nghĩa
+                interpretationContainer.style.display = 'block';
+                drawnCards.forEach((card, index) => {
+                    displayInterpretation(card, positions[index]);
+                });
+                
+                // 6. Mở khóa nút và khôi phục văn bản
+                drawButton.disabled = false;
+                drawButton.textContent = "Rút 3 Lá Bài Mới";
+                drawButton.classList.remove("opacity-50");
+                
+                // Cuộn xuống phần giải nghĩa
+                interpretationContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            }, 1500); // 1.5 giây trễ
+        }
+
+        /**
+         * Hiển thị một lá bài lên khu vực trải bài
+         * @param {object} card - Đối tượng lá bài từ tarotData
+         * @param {string} position - Tên vị trí (ví dụ: "Tình hình hiện tại")
+         * @param {number} index - Chỉ số 0, 1, hoặc 2 (để tạo hiệu ứng trễ)
+         */
+        function displayCard(card, position, index) {
+            const cardHTML = `
+                <div class="tarot-card bg-gradient-to-br from-indigo-100 to-purple-200 text-gray-900 rounded-lg shadow-xl p-6 text-center flex flex-col justify-between h-72 fade-in" 
+                     style="animation-delay: ${index * 0.3}s">
+                    <div class="flex-grow flex items-center justify-center">
+                        <h3 class="text-xl md:text-2xl font-bold text-indigo-900">${card.name}</h3>
+                    </div>
+                    <p class="text-sm font-semibold text-purple-700 uppercase">${position.substring(3)}</p>
+                </div>
+            `;
+            spreadContainer.innerHTML += cardHTML;
+        }
+
+        /**
+         * Hiển thị phần giải nghĩa chi tiết của một lá bài
+         * @param {object} card - Đối tượng lá bài
+         * @param {string} position - Tên vị trí
+         */
+        function displayInterpretation(card, position) {
+            const interpretationHTML = `
+                <div class="fade-in" style="animation-delay: 0.5s;">
+                    <h3 class="text-2xl font-bold text-purple-300 mb-2">${position}: ${card.name}</h3>
+                    <p class="text-lg text-gray-200 leading-relaxed">${card.career_meaning}</p>
+                </div>
+            `;
+            interpretationContent.innerHTML += interpretationHTML;
+        }
+
+    </script>
+</body>
+</html>
