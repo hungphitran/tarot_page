@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải bài Tarot Tình cảm</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải font chữ (Inter và Playfair Display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Tùy chỉnh font chữ */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Tạo nền gradient lấp lánh - màu hồng/tím lãng mạn */
+            background: radial-gradient(ellipse at bottom, #2a003f 0%, #000000 100%);
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Hiệu ứng mờ dần khi lá bài xuất hiện */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Thêm một chút hiệu ứng cho lá bài */
+        .tarot-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .tarot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(233, 179, 255, 0.2), 0 10px 10px -5px rgba(233, 179, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200 p-6 md:p-12">
+    <div class="container mx-auto max-w-5xl">
+        <nav class="mb-8">
+            <a href="index.html" class="inline-flex items-center gap-2 bg-gray-900 bg-opacity-50 hover:bg-opacity-70 text-pink-300 font-semibold py-2 px-4 rounded-full transition">
+                <span>&larr;</span>
+                <span>Quay lại Trang Chủ</span>
+            </a>
+        </nav>
+        
+        <!-- Tiêu đề -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-400 mb-2">Trải Bài Tarot Tình Cảm</h1>
+            <p class="text-lg text-rose-200">Hãy tập trung vào câu hỏi về tình cảm của bạn và rút 3 lá bài.</p>
+        </header>
+
+        <!-- Nút rút bài -->
+        <div class="text-center mb-12">
+            <button id="drawButton" class="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50">
+                Rút 3 Lá Bài
+            </button>
+        </div>
+
+        <!-- Khu vực hiển thị 3 lá bài -->
+        <div id="spreadContainer" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <!-- Các lá bài sẽ được JS chèn vào đây -->
+        </div>
+
+        <!-- Khu vực giải nghĩa chi tiết -->
+        <div id="interpretationContainer" class="bg-gray-800 bg-opacity-50 rounded-lg p-6 md:p-10 shadow-xl" style="display: none;">
+            <h2 class="text-3xl font-bold text-center mb-6 text-pink-300">Ý Nghĩa Chi Tiết</h2>
+            <div id="interpretationContent" class="space-y-8">
+                <!-- Nội dung giải nghĩa sẽ được JS chèn vào đây -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Dữ liệu 22 lá bài Ẩn Chính (Major Arcana) ---
+        // Mỗi lá bài có giải nghĩa chi tiết về TÌNH CẢM
+        const tarotData = [
+            {
+                name: "0. The Fool (Chàng Khờ)",
+                love_meaning: "Một khởi đầu mới mẻ trong tình yêu, có thể là một mối quan hệ mới đầy phiêu lưu hoặc một giai đoạn mới vô tư hơn. Hãy mở lòng đón nhận, nhưng cũng đừng quá ngây thơ. Sẵn sàng cho một hành trình tình cảm mới."
+            },
+            {
+                name: "I. The Magician (Pháp Sư)",
+                love_meaning: "Bạn đang có sức hút và khả năng để tạo ra mối quan hệ mà mình mong muốn. Đây là lúc để chủ động, thể hiện rõ ràng tình cảm và điều bạn muốn trong tình yêu. Bạn có khả năng biến ước muốn thành hiện thực."
+            },
+            {
+                name: "II. The High Priestess (Nữ Tu Sĩ)",
+                love_meaning: "Có những điều bí ẩn hoặc chưa được nói ra trong mối quan hệ. Hãy tin tưởng mạnh mẽ vào trực giác của bạn. Có thể có những cảm xúc sâu sắc đang được che giấu, cần thời gian để thấu hiểu."
+            },
+            {
+                name: "III. The Empress (Nữ Hoàng)",
+                love_meaning: "Tình yêu đang nở rộ, tràn đầy sự quan tâm, chăm sóc và lãng mạn. Đây là thời điểm của sự gắn kết, nuôi dưỡng mối quan hệ. Lá bài này cũng có thể báo hiệu sự cam kết, tin vui, hoặc một mối quan hệ rất màu mỡ."
+            },
+            {
+                name: "IV. The Emperor (Hoàng Đế)",
+                love_meaning: "Cần có sự ổn định, cam kết và trật tự trong tình yêu. Mối quan hệ này cần các quy tắc rõ ràng hoặc một nền tảng vững chắc. Đôi khi nó chỉ một người (hoặc cả hai) đang muốn kiểm soát hoặc bảo vệ mối quan hệ."
+            },
+            {
+                name: "V. The Hierophant (Giáo Hoàng)",
+                love_meaning: "Mối quan hệ này có thể đang đi theo hướng truyền thống, được xã hội chấp nhận, hoặc tiến tới cam kết (như hôn nhân). Bạn đang tìm kiếm một mối quan hệ có chung giá trị đạo đức, niềm tin."
+            },
+            {
+                name: "VI. The Lovers (Người Tình)",
+                love_meaning: "Đây là lá bài của sự lựa chọn quan trọng trong tình yêu. Đó có thể là sự lựa chọn giữa hai người, hoặc lựa chọn cam kết. Nó cũng nói lên một sự kết nối tâm hồn sâu sắc, sự hòa hợp và đồng điệu."
+            },
+            {
+                name: "VII. The Chariot (Cỗ Xe)",
+                love_meaning: "Mối quan hệ đang tiến triển nhanh chóng. Cần phải kiểm soát cảm xúc và ý chí để giữ cho mọi thứ cân bằng và đi đúng hướng. Bạn đang rất quyết tâm để đạt được điều mình muốn trong tình yêu."
+            },
+            {
+                name: "VIII. Strength (Sức Mạnh)",
+                love_meaning: "Bạn cần dùng sức mạnh nội tâm, sự kiên nhẫn và lòng trắc ẩn để vượt qua khó khăn trong tình yêu. Sự mềm mỏng, thấu hiểu sẽ chiến thắng sự nóng nảy hay xung đột. Đây là sức mạnh của tình yêu thương."
+            },
+            {
+                name: "IX. The Hermit (Ẩn Sĩ)",
+                love_meaning: "Đây là lúc bạn cần một khoảng thời gian ở một mình để suy ngẫm về mối quan hệ hoặc điều bạn thực sự cần trong tình yêu. Có thể là một sự tạm thời xa cách để hiểu rõ trái tim mình hơn."
+            },
+            {
+                name: "X. Wheel of Fortune (Bánh Xe Vận Mệnh)",
+                love_meaning: "Một sự thay đổi bất ngờ trong vận mệnh tình duyên. Mọi thứ đang thay đổi và nằm ngoài tầm kiểm soát của bạn. Nếu đang tốt, hãy trân trọng; nếu đang xấu, một chu kỳ mới tốt đẹp hơn sắp bắt đầu."
+            },
+            {
+                name: "XI. Justice (Công Lý)",
+                love_meaning: "Sự thật và công bằng sẽ được phơi bày trong mối quan hệ. Một quyết định quan trọng cần được đưa ra một cách lý trí và công tâm. Mọi hành động đều có kết quả tương xứng (nhân quả trong tình yêu)."
+            },
+            {
+                name: "XII. The Hanged Man (Người Treo Ngược)",
+                love_meaning: "Bạn có thể đang cảm thấy bế tắc, hoặc phải 'hy sinh' rất nhiều trong mối quan hệ. Đây là lúc để tạm dừng lại và nhìn mọi thứ từ một góc độ hoàn toàn khác. Cần có sự thay đổi về quan điểm để tiến lên."
+            },
+            {
+                name: "XIII. Death (Cái Chết)",
+                love_meaning: "Một sự kết thúc cần thiết để bắt đầu một chương mới. Một mối quan hệ cũ có thể kết thúc để nhường chỗ cho điều mới mẻ, hoặc mối quan hệ hiện tại sẽ 'lột xác', thay đổi hoàn toàn để trở nên tốt hơn."
+            },
+            {
+                name: "XIV. Temperance (Sự Điều Độ)",
+                love_meaning: "Cần sự cân bằng, hòa hợp và kiên nhẫn trong mối quan hệ. Bạn và đối phương đang học cách dung hòa những sự khác biệt để tạo nên một tổng thể hài hòa. Mối quan hệ đang được chữa lành và trở nên sâu sắc hơn."
+            },
+            {
+                name: "XV. The Devil (Ác Quỷ)",
+                love_meaning: "Có sự phụ thuộc, ám ảnh hoặc những ràng buộc không lành mạnh trong mối quan hệ. Bạn đang cảm thấy bị 'mắc kẹt' bởi đam mê, ghen tuông hoặc thói quen cũ. Cần nhận ra sự thật để tự giải thoát."
+            },
+            {
+                name: "XVI. The Tower (Ngọn Tháp)",
+                love_meaning: "Một sự thật gây sốc, một cuộc cãi vã lớn hoặc một sự kiện bất ngờ làm rung chuyển mối quan hệ. Nền tảng cũ (có thể là giả dối) sụp đổ. Đau đớn, nhưng cần thiết để cả hai xây dựng lại một cách trung thực hơn."
+            },
+            {
+                name: "XVII. The Star (Ngôi Sao)",
+                love_meaning: "Hy vọng, niềm tin và sự chữa lành sau một thời gian khó khăn trong tình cảm. Đây là lúc để tin tưởng vào tình yêu và tương lai. Một mối quan hệ mới đầy hy vọng hoặc sự hàn gắn sâu sắc đang đến."
+            },
+            {
+                name: "XVIII. The Moon (Mặt Trăng)",
+                love_meaning: "Có sự mơ hồ, hiểu lầm hoặc thậm chí là lừa dối trong mối quan hệ. Nỗi sợ hãi và bất an vô hình đang che mờ sự thật. Mọi thứ không rõ ràng như vẻ ngoài. Cần cẩn trọng và lắng nghe trực giác."
+            },
+            {
+                name: "XIX. The Sun (Mặt Trời)",
+                love_meaning: "Niềm vui, sự rõ ràng và hạnh phúc tuyệt vời trong tình yêu. Mối quan hệ của bạn tràn ngập sự ấm áp, trung thực và năng lượng tích cực. Đây là một trong những lá bài viên mãn nhất cho tình cảm."
+            },
+            {
+                name: "XX. Judgement (Phán Xét)",
+                love_meaning: "Thời điểm của sự 'thức tỉnh' và đánh giá lại mối quan hệ. Cả hai cần nhìn lại quá khứ, tha thứ cho nhau và đưa ra quyết định quan trọng về việc có nên cùng nhau tiến tới một chương mới hay không."
+            },
+            {
+                name: "XXI. The World (Thế Giới)",
+                love_meaning: "Một chu kỳ tình cảm đã hoàn thành một cách trọn vẹn và thành công. Bạn đã đạt được sự viên mãn, có thể là một cam kết lớn (hôn nhân), sự hiểu biết sâu sắc. Sẵn sàng cho một hành trình mới, hạnh phúc hơn."
+            }
+        ];
+
+        // --- Lấy các phần tử DOM ---
+        const drawButton = document.getElementById('drawButton');
+        const spreadContainer = document.getElementById('spreadContainer');
+        const interpretationContainer = document.getElementById('interpretationContainer');
+        const interpretationContent = document.getElementById('interpretationContent');
+
+        // --- Thêm sự kiện cho nút ---
+        drawButton.addEventListener('click', drawCards);
+
+        /**
+         * Hàm chính: Rút và hiển thị 3 lá bài
+         */
+        function drawCards() {
+            // 1. Tạm khóa nút và thay đổi văn bản
+            drawButton.disabled = true;
+            drawButton.textContent = "Đang xào bài...";
+            drawButton.classList.add("opacity-50");
+
+            // 2. Xóa kết quả cũ
+            spreadContainer.innerHTML = '';
+            interpretationContent.innerHTML = '';
+            interpretationContainer.style.display = 'none';
+
+            // 3. Xào bài (Tạo một bản sao và xào bằng thuật toán Fisher-Yates)
+            let deck = [...tarotData];
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // 4. Rút 3 lá bài và xác định vị trí
+            const drawnCards = [deck.pop(), deck.pop(), deck.pop()];
+            const positions = [
+                "1. Bạn (Hiện tại)",
+                "2. Đối phương / Mối quan hệ",
+                "3. Lời khuyên / Tương lai"
+            ];
+
+            // 5. Hiển thị kết quả sau một khoảng trễ (để tạo cảm giác)
+            setTimeout(() => {
+                // Hiển thị 3 lá bài
+                drawnCards.forEach((card, index) => {
+                    displayCard(card, positions[index], index);
+                });
+
+                // Hiển thị giải nghĩa
+                interpretationContainer.style.display = 'block';
+                drawnCards.forEach((card, index) => {
+                    displayInterpretation(card, positions[index]);
+                });
+                
+                // 6. Mở khóa nút và khôi phục văn bản
+                drawButton.disabled = false;
+                drawButton.textContent = "Rút 3 Lá Bài Mới";
+                drawButton.classList.remove("opacity-50");
+                
+                // Cuộn xuống phần giải nghĩa
+                interpretationContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            }, 1500); // 1.5 giây trễ
+        }
+
+        /**
+         * Hiển thị một lá bài lên khu vực trải bài
+         * @param {object} card - Đối tượng lá bài từ tarotData
+         * @param {string} position - Tên vị trí (ví dụ: "1. Bạn (Hiện tại)")
+         * @param {number} index - Chỉ số 0, 1, hoặc 2 (để tạo hiệu ứng trễ)
+         */
+        function displayCard(card, position, index) {
+            const cardHTML = `
+                <div class="tarot-card bg-gradient-to-br from-rose-100 to-pink-200 text-gray-900 rounded-lg shadow-xl p-6 text-center flex flex-col justify-between h-72 fade-in" 
+                     style="animation-delay: ${index * 0.3}s">
+                    <div class="flex-grow flex items-center justify-center">
+                        <h3 class="text-xl md:text-2xl font-bold text-rose-900">${card.name}</h3>
+                    </div>
+                    <p class="text-sm font-semibold text-pink-700 uppercase">${position.substring(3)}</p>
+                </div>
+            `;
+            spreadContainer.innerHTML += cardHTML;
+        }
+
+        /**
+         * Hiển thị phần giải nghĩa chi tiết của một lá bài
+         * @param {object} card - Đối tượng lá bài
+         * @param {string} position - Tên vị trí
+         */
+        function displayInterpretation(card, position) {
+            // Thay đổi ở đây: dùng card.love_meaning
+            const interpretationHTML = `
+                <div class="fade-in" style="animation-delay: 0.5s;">
+                    <h3 class="text-2xl font-bold text-pink-300 mb-2">${position}: ${card.name}</h3>
+                    <p class="text-lg text-gray-200 leading-relaxed">${card.love_meaning}</p>
+                </div>
+            `;
+            interpretationContent.innerHTML += interpretationHTML;
+        }
+
+    </script>
+</body>
+</html>

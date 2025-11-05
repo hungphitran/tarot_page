@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải bài Tarot Sức khỏe</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải font chữ (Inter và Playfair Display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Tùy chỉnh font chữ */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Tạo nền gradient lấp lánh - màu xanh dương/cyan */
+            background: radial-gradient(ellipse at bottom, #002b4e 0%, #000000 100%);
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Hiệu ứng mờ dần khi lá bài xuất hiện */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Thêm một chút hiệu ứng cho lá bài */
+        .tarot-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .tarot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(103, 232, 249, 0.2), 0 10px 10px -5px rgba(103, 232, 249, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200 p-6 md:p-12">
+    <div class="container mx-auto max-w-5xl">
+        <nav class="mb-8">
+            <a href="index.html" class="inline-flex items-center gap-2 bg-gray-900 bg-opacity-50 hover:bg-opacity-70 text-blue-300 font-semibold py-2 px-4 rounded-full transition">
+                <span>&larr;</span>
+                <span>Quay lại Trang Chủ</span>
+            </a>
+        </nav>
+        
+        <!-- Tiêu đề -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">Trải Bài Tarot Sức Khỏe</h1>
+            <p class="text-lg text-cyan-200">Hãy tập trung vào câu hỏi về sức khỏe của bạn và rút 3 lá bài.</p>
+        </header>
+
+        <!-- Nút rút bài -->
+        <div class="text-center mb-12">
+            <button id="drawButton" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Rút 3 Lá Bài
+            </button>
+        </div>
+
+        <!-- Khu vực hiển thị 3 lá bài -->
+        <div id="spreadContainer" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <!-- Các lá bài sẽ được JS chèn vào đây -->
+        </div>
+
+        <!-- Khu vực giải nghĩa chi tiết -->
+        <div id="interpretationContainer" class="bg-gray-800 bg-opacity-50 rounded-lg p-6 md:p-10 shadow-xl" style="display: none;">
+            <h2 class="text-3xl font-bold text-center mb-6 text-blue-300">Ý Nghĩa Chi Tiết</h2>
+            <div id="interpretationContent" class="space-y-8">
+                <!-- Nội dung giải nghĩa sẽ được JS chèn vào đây -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Dữ liệu 22 lá bài Ẩn Chính (Major Arcana) ---
+        // Mỗi lá bài có giải nghĩa chi tiết về SỨC KHỎE
+        const tarotData = [
+            {
+                name: "0. The Fool (Chàng Khờ)",
+                health_meaning: "Một khởi đầu mới trong hành trình sức khỏe. Có thể bạn đang thử một phương pháp tập luyện hoặc chế độ ăn mới. Hãy cẩn thận với sự bốc đồng, nhưng hãy đón nhận năng lượng mới này."
+            },
+            {
+                name: "I. The Magician (Pháp Sư)",
+                health_meaning: "Bạn có khả năng và ý chí để cải thiện sức khỏe. Đây là lúc để chủ động thay đổi thói quen, tìm kiếm phương pháp chữa trị. Sức mạnh phục hồi nằm trong tay bạn."
+            },
+            {
+                name: "II. The High Priestess (Nữ Tu Sĩ)",
+                health_meaning: "Hãy lắng nghe cơ thể và trực giác của bạn. Có thể có những vấn đề sức khỏe 'ẩn' mà cơ thể đang cố báo hiệu. Cần sự yên tĩnh để thấu hiểu."
+            },
+            {
+                name: "III. The Empress (Nữ Hoàng)",
+                health_meaning: "Sức khỏe dồi dào, sự 'nảy nở'. Lá bài này nói về sự chăm sóc, nuôi dưỡng cơ thể. Rất tốt cho các vấn đề liên quan đến sinh sản, hoặc đơn giản là cơ thể đang ở trạng thái tốt."
+            },
+            {
+                name: "IV. The Emperor (Hoàng Đế)",
+                health_meaning: "Cần một chế độ, kỷ luật và cấu trúc rõ ràng trong sức khỏe (giờ giấc ăn uống, tập luyện). Hãy kiểm soát thói quen của mình một cách nghiêm ngặt để có kết quả tốt."
+            },
+            {
+                name: "V. The Hierophant (Giáo Hoàng)",
+                health_meaning: "Tìm kiếm lời khuyên từ y tế 'chính thống' (bác sĩ, chuyên gia). Đây là lúc để tin tưởng vào một phác đồ điều trị, một phương pháp đã được kiểm chứng."
+            },
+            {
+                name: "VI. The Lovers (Người Tình)",
+                health_meaning: "Đứng trước một lựa chọn quan trọng liên quan đến sức khỏe. Cần tìm sự cân bằng hài hòa giữa thể chất, tinh thần và cảm xúc. Sức khỏe là sự kết nối."
+            },
+            {
+                name: "VII. The Chariot (Cỗ Xe)",
+                health_meaning: "Dùng ý chí mạnh mẽ để vượt qua bệnh tật hoặc đạt được mục tiêu sức khỏe (như giảm cân). Cần sự kiểm soát và quyết tâm để chiến thắng."
+            },
+            {
+                name: "VIII. Strength (Sức Mạnh)",
+                health_meaning: "Sức mạnh nội tâm, khả năng phục hồi của cơ thể. Bạn có khả năng 'thuần hóa' bệnh tật bằng sự kiên nhẫn và lòng trắc ẩn với chính cơ thể mình."
+            },
+            {
+                name: "IX. The Hermit (Ẩn Sĩ)",
+                health_meaning: "Đây là lúc cơ thể cần được nghỉ ngơi, phục hồi và 'ẩn dật'. Hãy dành thời gian một mình để xem xét lại lối sống và nạp lại năng lượng. Đừng làm việc quá sức."
+            },
+            {
+                name: "X. Wheel of Fortune (Bánh Xe Vận Mệnh)",
+                health_meaning: "Một sự thay đổi bất ngờ về tình trạng sức khỏe, có thể tốt hoặc xấu. Điều này cũng nói về chu kỳ tự nhiên của cơ thể. Hãy học cách thích nghi."
+            },
+            {
+                name: "XI. Justice (Công Lý)",
+                health_meaning: "Tình trạng sức khỏe hiện tại là kết quả trực tiếp của các thói quen và hành động trong quá khứ (nhân quả). Cần sự cân bằng để lấy lại sức khỏe."
+            },
+            {
+                name: "XII. The Hanged Man (Người Treo Ngược)",
+                health_meaning: "Bạn có thể đang cảm thấy bế tắc về sức khỏe. Đây là lúc để tạm dừng, thay đổi góc nhìn. Có thể một sự 'hy sinh' (từ bỏ thói quen xấu) là cần thiết để chữa lành."
+            },
+            {
+                name: "XIII. Death (Cái Chết)",
+                health_meaning: "Một sự thay đổi, chuyển hóa lớn về sức khỏe. Kết thúc một thói quen xấu, một căn bệnh. Đây là sự 'tái sinh' cần thiết cho một lối sống lành mạnh hơn."
+            },
+            {
+                name: "XIV. Temperance (Sự Điều Độ)",
+                health_meaning: "Cân bằng là chìa khóa vàng cho sức khỏe. Hãy điều độ trong mọi thứ (ăn uống, làm việc, nghỉ ngơi). Đây là lá bài của sự chữa lành, sự dung hòa."
+            },
+            {
+                name: "XV. The Devil (Ác Quỷ)",
+                health_meaning: "Những thói quen xấu, sự nghiện ngập (thuốc lá, rượu, đồ ăn) đang 'xiềng xích' sức khỏe của bạn. Cần nhận diện và nỗ lực để tự giải thoát khỏi chúng."
+            },
+            {
+                name: "XVI. The Tower (Ngọn Tháp)",
+                health_meaning: "Một biến cố sức khỏe đột ngột, bất ngờ (ốm nặng, tai nạn). Cú sốc này phá vỡ hiện trạng để bạn buộc phải xây dựng lại nền tảng sức khỏe từ đầu."
+            },
+            {
+                name: "XVII. The Star (Ngôi Sao)",
+                health_meaning: "Hy vọng, sự chữa lành và phục hồi. Sau một thời gian ốm đau, đây là dấu hiệu của sự bình phục. Hãy giữ vững niềm tin và sự lạc quan."
+            },
+            {
+                name: "XVIII. The Moon (Mặt Trăng)",
+                health_meaning: "Sức khỏe tinh thần đang ảnh hưởng đến thể chất (lo âu, căng thẳng, mất ngủ). Tình trạng bệnh có thể mơ hồ, khó chẩn đoán. Cần giải tỏa nỗi sợ hãi."
+            },
+            {
+                name: "XIX. The Sun (Mặt Trời)",
+                health_meaning: "Sức khỏe tuyệt vời! Năng lượng dồi dào, sự rõ ràng và lạc quan. Đây là lá bài tốt nhất cho thấy sự phục hồi hoàn toàn và thể trạng sung mãn."
+            },
+            {
+                name: "XX. Judgement (Phán Xét)",
+                health_meaning: "Một sự 'thức tỉnh' về sức khỏe. Bạn đang đánh giá lại toàn bộ lối sống của mình và sẵn sàng cho một 'cuộc tái sinh', một cơ hội để làm lại tốt hơn."
+            },
+            {
+                name: "XXI. The World (Thế Giới)",
+                health_meaning: "Hoàn thành một chu kỳ chữa bệnh hoặc đạt được mục tiêu sức khỏe. Bạn đã đạt được trạng thái khỏe mạnh toàn diện (cả thể chất lẫn tinh thần)."
+            }
+        ];
+
+        // --- Lấy các phần tử DOM ---
+        const drawButton = document.getElementById('drawButton');
+        const spreadContainer = document.getElementById('spreadContainer');
+        const interpretationContainer = document.getElementById('interpretationContainer');
+        const interpretationContent = document.getElementById('interpretationContent');
+
+        // --- Thêm sự kiện cho nút ---
+        drawButton.addEventListener('click', drawCards);
+
+        /**
+         * Hàm chính: Rút và hiển thị 3 lá bài
+         */
+        function drawCards() {
+            // 1. Tạm khóa nút và thay đổi văn bản
+            drawButton.disabled = true;
+            drawButton.textContent = "Đang xào bài...";
+            drawButton.classList.add("opacity-50");
+
+            // 2. Xóa kết quả cũ
+            spreadContainer.innerHTML = '';
+            interpretationContent.innerHTML = '';
+            interpretationContainer.style.display = 'none';
+
+            // 3. Xào bài (Tạo một bản sao và xào bằng thuật toán Fisher-Yates)
+            let deck = [...tarotData];
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // 4. Rút 3 lá bài và xác định vị trí
+            const drawnCards = [deck.pop(), deck.pop(), deck.pop()];
+            const positions = [
+                "1. Sức khỏe hiện tại",
+                "2. Yếu tố ảnh hưởng",
+                "3. Lời khuyên / Hướng cải thiện"
+            ];
+
+            // 5. Hiển thị kết quả sau một khoảng trễ (để tạo cảm giác)
+            setTimeout(() => {
+                // Hiển thị 3 lá bài
+                drawnCards.forEach((card, index) => {
+                    displayCard(card, positions[index], index);
+                });
+
+                // Hiển thị giải nghĩa
+                interpretationContainer.style.display = 'block';
+                drawnCards.forEach((card, index) => {
+                    displayInterpretation(card, positions[index]);
+                });
+                
+                // 6. Mở khóa nút và khôi phục văn bản
+                drawButton.disabled = false;
+                drawButton.textContent = "Rút 3 Lá Bài Mới";
+                drawButton.classList.remove("opacity-50");
+                
+                // Cuộn xuống phần giải nghĩa
+                interpretationContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            }, 1500); // 1.5 giây trễ
+        }
+
+        /**
+         * Hiển thị một lá bài lên khu vực trải bài
+         * @param {object} card - Đối tượng lá bài từ tarotData
+         * @param {string} position - Tên vị trí
+         * @param {number} index - Chỉ số 0, 1, hoặc 2 (để tạo hiệu ứng trễ)
+         */
+        function displayCard(card, position, index) {
+            const cardHTML = `
+                <div class="tarot-card bg-gradient-to-br from-blue-100 to-cyan-200 text-gray-900 rounded-lg shadow-xl p-6 text-center flex flex-col justify-between h-72 fade-in" 
+                     style="animation-delay: ${index * 0.3}s">
+                    <div class="flex-grow flex items-center justify-center">
+                        <h3 class="text-xl md:text-2xl font-bold text-blue-900">${card.name}</h3>
+                    </div>
+                    <p class="text-sm font-semibold text-cyan-700 uppercase">${position.substring(3)}</p>
+                </div>
+            `;
+            spreadContainer.innerHTML += cardHTML;
+        }
+
+        /**
+         * Hiển thị phần giải nghĩa chi tiết của một lá bài
+         * @param {object} card - Đối tượng lá bài
+         * @param {string} position - Tên vị trí
+         */
+        function displayInterpretation(card, position) {
+            // Thay đổi ở đây: dùng card.health_meaning
+            const interpretationHTML = `
+                <div class="fade-in" style="animation-delay: 0.5s;">
+                    <h3 class="text-2xl font-bold text-blue-300 mb-2">${position}: ${card.name}</h3>
+                    <p class="text-lg text-gray-200 leading-relaxed">${card.health_meaning}</p>
+                </div>
+            `;
+            interpretationContent.innerHTML += interpretationHTML;
+        }
+
+    </script>
+</body>
+</html>

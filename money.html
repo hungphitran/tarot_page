@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải bài Tarot Tiền bạc</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải font chữ (Inter và Playfair Display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Tùy chỉnh font chữ */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Tạo nền gradient lấp lánh - màu xanh lá/vàng */
+            background: radial-gradient(ellipse at bottom, #053a1a 0%, #000000 100%);
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Hiệu ứng mờ dần khi lá bài xuất hiện */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Thêm một chút hiệu ứng cho lá bài */
+        .tarot-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .tarot-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(110, 231, 183, 0.2), 0 10px 10px -5px rgba(110, 231, 183, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200 p-6 md:p-12">
+    <div class="container mx-auto max-w-5xl">
+        <nav class="mb-8">
+            <a href="index.html" class="inline-flex items-center gap-2 bg-gray-900 bg-opacity-50 hover:bg-opacity-70 text-emerald-300 font-semibold py-2 px-4 rounded-full transition">
+                <span>&larr;</span>
+                <span>Quay lại Trang Chủ</span>
+            </a>
+        </nav>
+        
+        <!-- Tiêu đề -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 mb-2">Trải Bài Tarot Tiền Bạc</h1>
+            <p class="text-lg text-emerald-200">Hãy tập trung vào câu hỏi về tài chính của bạn và rút 3 lá bài.</p>
+        </header>
+
+        <!-- Nút rút bài -->
+        <div class="text-center mb-12">
+            <button id="drawButton" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                Rút 3 Lá Bài
+            </button>
+        </div>
+
+        <!-- Khu vực hiển thị 3 lá bài -->
+        <div id="spreadContainer" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <!-- Các lá bài sẽ được JS chèn vào đây -->
+        </div>
+
+        <!-- Khu vực giải nghĩa chi tiết -->
+        <div id="interpretationContainer" class="bg-gray-800 bg-opacity-50 rounded-lg p-6 md:p-10 shadow-xl" style="display: none;">
+            <h2 class="text-3xl font-bold text-center mb-6 text-green-300">Ý Nghĩa Chi Tiết</h2>
+            <div id="interpretationContent" class="space-y-8">
+                <!-- Nội dung giải nghĩa sẽ được JS chèn vào đây -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Dữ liệu 22 lá bài Ẩn Chính (Major Arcana) ---
+        // Mỗi lá bài có giải nghĩa chi tiết về TIỀN BẠC/TÀI CHÍNH
+        const tarotData = [
+            {
+                name: "0. The Fool (Chàng Khờ)",
+                money_meaning: "Một khởi đầu mới về tài chính, có thể là một công việc mới hoặc một khoản đầu tư mạo hiểm. Hãy cẩn trọng nhưng đừng sợ hãi. Đây là cơ hội mới, nhưng cũng đi kèm rủi ro."
+            },
+            {
+                name: "I. The Magician (Pháp Sư)",
+                money_meaning: "Bạn đang có khả năng và nguồn lực để tạo ra tiền bạc. Sử dụng kỹ năng và tài năng của bạn để kiếm tiền. Đây là lúc để bắt đầu một dự án kinh doanh mới hoặc yêu cầu tăng lương."
+            },
+            {
+                name: "II. The High Priestess (Nữ Tu Sĩ)",
+                money_meaning: "Hãy tin vào trực giác của bạn về các quyết định tài chính. Có thể có những thông tin ẩn giấu bạn cần tìm hiểu kỹ trước khi đầu tư. Đừng vội vàng đưa ra quyết định."
+            },
+            {
+                name: "III. The Empress (Nữ Hoàng)",
+                money_meaning: "Giai đoạn phát triển tài chính, sự sung túc và dồi dào. Các khoản đầu tư của bạn đang 'đơm hoa kết trái'. Đây là lúc để tận hưởng thành quả lao động của mình."
+            },
+            {
+                name: "IV. The Emperor (Hoàng Đế)",
+                money_meaning: "Cần có kế hoạch và kỷ luật tài chính nghiêm ngặt. Hãy lập ngân sách và bám sát nó. Đây là lúc để kiểm soát tiền bạc của bạn một cách có cấu trúc, ổn định và lâu dài."
+            },
+            {
+                name: "V. The Hierophant (Giáo Hoàng)",
+                money_meaning: "Tìm kiếm lời khuyên tài chính từ các chuyên gia hoặc các tổ chức uy tín (ngân hàng, cố vấn). Đây là lúc để đi theo các con đường đầu tư truyền thống, an toàn."
+            },
+            {
+                name: "VI. The Lovers (Người Tình)",
+                money_meaning: "Bạn đang đứng trước một lựa chọn tài chính quan trọng, có thể là giữa hai công việc hoặc hai khoản đầu tư. Hãy đảm bảo quyết định của bạn phù hợp với giá trị của bản thân."
+            },
+            {
+                name: "VII. The Chariot (Cỗ Xe)",
+                money_meaning: "Bạn đang có ý chí mạnh mẽ để đạt được mục tiêu tài chính. Hãy tập trung, kiểm soát chi tiêu và nỗ lực tiến về phía trước. Thành công sẽ đến qua sự quyết tâm và hành động."
+            },
+            {
+                name: "VIII. Strength (Sức Mạnh)",
+                money_meaning: "Cần sức mạnh nội tâm và sự kiên nhẫn để quản lý tài chính, đặc biệt là khi đối mặt với cám dỗ chi tiêu. Kiểm soát xung động, tiết kiệm một cách bền bỉ."
+            },
+            {
+                name: "IX. The Hermit (Ẩn Sĩ)",
+                money_meaning: "Đã đến lúc xem xét lại tình hình tài chính của bạn một cách nghiêm túc. Tạm dừng các khoản chi tiêu lớn, suy ngẫm về mục tiêu dài hạn. Tìm kiếm sự khôn ngoan trong việc quản lý tiền bạc."
+            },
+            {
+                name: "X. Wheel of Fortune (Bánh Xe Vận Mệnh)",
+                money_meaning: "Một sự thay đổi bất ngờ về tiền bạc, có thể là một khoản tiền 'trời cho' hoặc một khoản lỗ. Vận may tài chính đang thay đổi. Hãy linh hoạt và chuẩn bị cho mọi tình huống."
+            },
+            {
+                name: "XI. Justice (Công Lý)",
+                money_meaning: "Mọi thứ sẽ trở nên rõ ràng và công bằng về mặt tài chính. Có thể liên quan đến hợp đồng, pháp lý. Bạn sẽ nhận được những gì bạn xứng đáng. Hãy trung thực trong mọi giao dịch."
+            },
+            {
+                name: "XII. The Hanged Man (Người Treo Ngược)",
+                money_meaning: "Bạn có thể đang cảm thấy bế tắc về tài chính, hoặc phải 'hy sinh' một thứ gì đó. Đây là lúc để thay đổi góc nhìn. Có thể bạn cần từ bỏ một thói quen chi tiêu cũ để có sự tự do."
+            },
+            {
+                name: "XIII. Death (Cái Chết)",
+                money_meaning: "Một sự kết thúc lớn về tài chính (ví dụ: mất việc, hết nợ) để mở ra một khởi đầu mới. Đừng sợ hãi sự thay đổi. Đây là lúc để tái cấu trúc tài chính hoàn toàn."
+            },
+            {
+                name: "XIV. Temperance (Sự Điều Độ)",
+                money_meaning: "Cần sự cân bằng trong thu và chi. Tránh cực đoan (quá tiết kiệm hoặc quá phung phí). Hãy tìm kiếm sự điều độ, kiên nhẫn trong việc xây dựng sự giàu có."
+            },
+            {
+                name: "XV. The Devil (Ác Quỷ)",
+                money_meaning: "Bạn đang cảm thấy bị 'mắc kẹt' trong nợ nần, hoặc bị ám ảnh bởi tiền bạc. Có thể có những thói quen chi tiêu độc hại. Cần nhận diện những 'xiềng xích' này để tự giải thoát."
+            },
+            {
+                name: "XVI. The Tower (Ngọn Tháp)",
+                money_meaning: "Một cú sốc tài chính bất ngờ (mất tiền, đầu tư thất bại). Nền tảng tài chính của bạn bị lung lay. Dù đau đớn, đây là cơ hội để xây dựng lại một cách vững chắc hơn."
+            },
+            {
+                name: "XVII. The Star (Ngôi Sao)",
+                money_meaning: "Hy vọng và sự phục hồi tài chính sau một giai đoạn khó khăn. Hãy giữ niềm tin vào tương lai. Đây là thời điểm tốt để lập kế hoạch tài chính dài hạn và mơ ước lớn."
+            },
+            {
+                name: "XVIII. The Moon (Mặt Trăng)",
+                money_meaning: "Tình hình tài chính đang mơ hồ, không chắc chắn. Có thể có nỗi sợ hãi về tiền bạc hoặc những thông tin không rõ ràng. Cẩn thận với các quyết định tài chính lúc này."
+            },
+            {
+                name: "XIX. The Sun (Mặt Trời)",
+                money_meaning: "Thành công, rõ ràng và sung túc về tài chính! Các khoản đầu tư mang lại lợi nhuận, bạn cảm thấy an toàn và giàu có. Đây là thời điểm của sự rõ ràng và thành đạt về tiền bạc."
+            },
+            {
+                name: "XX. Judgement (Phán Xét)",
+                money_meaning: "Đã đến lúc đánh giá lại toàn bộ tình hình tài chính của bạn. Bạn đang có cơ hội 'tái sinh' tài chính, đưa ra các quyết định quan trọng dựa trên kinh nghiệm quá khứ."
+            },
+            {
+                name: "XXI. The World (Thế Giới)",
+                money_meaning: "Đạt được mục tiêu tài chính lớn, hoàn thành một chu kỳ. Bạn cảm thấy viên mãn và an toàn về tài chính. Sẵn sàng cho một cấp độ mới của sự thịnh vượng."
+            }
+        ];
+
+        // --- Lấy các phần tử DOM ---
+        const drawButton = document.getElementById('drawButton');
+        const spreadContainer = document.getElementById('spreadContainer');
+        const interpretationContainer = document.getElementById('interpretationContainer');
+        const interpretationContent = document.getElementById('interpretationContent');
+
+        // --- Thêm sự kiện cho nút ---
+        drawButton.addEventListener('click', drawCards);
+
+        /**
+         * Hàm chính: Rút và hiển thị 3 lá bài
+         */
+        function drawCards() {
+            // 1. Tạm khóa nút và thay đổi văn bản
+            drawButton.disabled = true;
+            drawButton.textContent = "Đang xào bài...";
+            drawButton.classList.add("opacity-50");
+
+            // 2. Xóa kết quả cũ
+            spreadContainer.innerHTML = '';
+            interpretationContent.innerHTML = '';
+            interpretationContainer.style.display = 'none';
+
+            // 3. Xào bài (Tạo một bản sao và xào bằng thuật toán Fisher-Yates)
+            let deck = [...tarotData];
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // 4. Rút 3 lá bài và xác định vị trí
+            const drawnCards = [deck.pop(), deck.pop(), deck.pop()];
+            const positions = [
+                "1. Tình hình tài chính hiện tại",
+                "2. Thách thức / Cơ hội",
+                "3. Lời khuyên / Kết quả"
+            ];
+
+            // 5. Hiển thị kết quả sau một khoảng trễ (để tạo cảm giác)
+            setTimeout(() => {
+                // Hiển thị 3 lá bài
+                drawnCards.forEach((card, index) => {
+                    displayCard(card, positions[index], index);
+                });
+
+                // Hiển thị giải nghĩa
+                interpretationContainer.style.display = 'block';
+                drawnCards.forEach((card, index) => {
+                    displayInterpretation(card, positions[index]);
+                });
+                
+                // 6. Mở khóa nút và khôi phục văn bản
+                drawButton.disabled = false;
+                drawButton.textContent = "Rút 3 Lá Bài Mới";
+                drawButton.classList.remove("opacity-50");
+                
+                // Cuộn xuống phần giải nghĩa
+                interpretationContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            }, 1500); // 1.5 giây trễ
+        }
+
+        /**
+         * Hiển thị một lá bài lên khu vực trải bài
+         * @param {object} card - Đối tượng lá bài từ tarotData
+         * @param {string} position - Tên vị trí
+         * @param {number} index - Chỉ số 0, 1, hoặc 2 (để tạo hiệu ứng trễ)
+         */
+        function displayCard(card, position, index) {
+            const cardHTML = `
+                <div class="tarot-card bg-gradient-to-br from-green-100 to-emerald-200 text-gray-900 rounded-lg shadow-xl p-6 text-center flex flex-col justify-between h-72 fade-in" 
+                     style="animation-delay: ${index * 0.3}s">
+                    <div class="flex-grow flex items-center justify-center">
+                        <h3 class="text-xl md:text-2xl font-bold text-green-900">${card.name}</h3>
+                    </div>
+                    <p class="text-sm font-semibold text-green-700 uppercase">${position.substring(3)}</p>
+                </div>
+            `;
+            spreadContainer.innerHTML += cardHTML;
+        }
+
+        /**
+         * Hiển thị phần giải nghĩa chi tiết của một lá bài
+         * @param {object} card - Đối tượng lá bài
+         * @param {string} position - Tên vị trí
+         */
+        function displayInterpretation(card, position) {
+            // Thay đổi ở đây: dùng card.money_meaning
+            const interpretationHTML = `
+                <div class="fade-in" style="animation-delay: 0.5s;">
+                    <h3 class="text-2xl font-bold text-green-300 mb-2">${position}: ${card.name}</h3>
+                    <p class="text-lg text-gray-200 leading-relaxed">${card.money_meaning}</p>
+                </div>
+            `;
+            interpretationContent.innerHTML += interpretationHTML;
+        }
+
+    </script>
+</body>
+</html>
